@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,16 +12,16 @@ namespace ConsoleApp6
 {
     internal class SampleClient : IDisposable
     {
-        private CancellationTokenSource cts;
-        private Task requestTask;
+        private CancellationTokenSource? cts;
+        private Task? requestTask;
 
         public void Start(string url)
         {
             this.cts = new CancellationTokenSource();
-            var cancellationToken = this.cts.Token;
+            var cancellationToken = cts.Token;
 
             this.requestTask = Task.Run(
-                (Func<Task?>) (async () =>
+                async () =>
                 {
                     using var source = new ActivitySource(nameof(SampleClient));
                     using var client = new HttpClient();
@@ -30,7 +31,7 @@ namespace ConsoleApp6
                     {
                         var content = new StringContent($"client message: {DateTime.Now}", Encoding.UTF8);
 
-                        using (var activity = source.StartActivity("POST:" + url, ActivityKind.Client))
+                        using (var activity = source.StartActivity("client POST:" + url, ActivityKind.Client))
                         {
                             count++;
 
@@ -47,15 +48,16 @@ namespace ConsoleApp6
                                 responseContent.Length.ToString(CultureInfo.InvariantCulture));
                             activity?.SetTag("current.count", count);
 
-                            foreach (var header in response.Headers)
+                            foreach (var (key, value) in response.Headers)
                             {
-                                if (header.Value is IEnumerable<object> enumerable)
+                                switch (value)
                                 {
-                                    activity?.SetTag($"http.header.{header.Key}", string.Join(",", enumerable));
-                                }
-                                else
-                                {
-                                    activity?.SetTag($"http.header.{header.Key}", header.Value.ToString());
+                                    case IEnumerable<object> enumerable:
+                                        activity?.SetTag($"http.header.{key}", string.Join(",", enumerable));
+                                        break;
+                                    default:
+                                        activity?.SetTag($"http.header.{key}", value.ToString());
+                                        break;
                                 }
                             }
                         }
@@ -69,19 +71,18 @@ namespace ConsoleApp6
                             return;
                         }
                     }
-                }),
+                },
                 cancellationToken);
         }
 
         public void Dispose()
         {
-            if (this.cts != null)
-            {
-                this.cts.Cancel();
-                this.requestTask.Wait();
-                this.requestTask.Dispose();
-                this.cts.Dispose();
-            }
+            if (cts == null) return;
+            
+            cts.Cancel();
+            requestTask?.Wait();
+            requestTask?.Dispose();
+            cts.Dispose();
         }
     }
 }

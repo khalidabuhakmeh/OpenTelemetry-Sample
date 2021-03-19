@@ -1,31 +1,45 @@
 ﻿using System;
-using System.Threading.Tasks;
+using ConsoleApp6;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace ConsoleApp6
-{
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
-            using var openTelemetry = Sdk.CreateTracerProviderBuilder()
-                .AddSource(nameof(SampleClient))
-                .AddSource(nameof(SampleServer))
-                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("zipkin-test"))
-                // default uri: http://localhost:9411/api/v2/spans
-                .AddZipkinExporter()
-                .Build();
+// Adapted from OpenTelemetry Repository
+//
+// https://github.com/open-telemetry/opentelemetry-dotnet
+//
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
 
-            using var sample = new InstrumentationWithActivitySource();
-            sample.Start();
 
-            Console.WriteLine("Traces are being created and exported" +
-                              "to Zipkin in the background. Use Zipkin to view them. " +
-                              "Press ENTER to stop.");
-            Console.ReadLine();
-        }
+// to start a zipkin instance, use the following Docker
+// command to start a new zipkin host then go to http://localhost:9411/zipkin
+//
+// docker run -d -p 9411:9411 openzipkin/zipkin-slim
 
-    }
-}
+using var openTelemetry = Sdk.CreateTracerProviderBuilder()
+    .AddSource(nameof(SampleClient), nameof(SampleServer))
+    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("demo"))
+    // default uri: http://localhost:9411/api/v2/spans
+    .AddZipkinExporter()
+    .Build();
+
+using var sample = new InstrumentationWithActivitySource();
+sample.Start();
+
+Console.WriteLine("Traces are being created and exported" +
+                  "to Zipkin in the background. Use Zipkin to view them. " +
+                  "Press ENTER to stop.");
+Console.ReadLine();

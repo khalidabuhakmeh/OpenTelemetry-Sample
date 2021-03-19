@@ -22,20 +22,20 @@ namespace ConsoleApp6
     internal class InstrumentationWithActivitySource : IDisposable
     {
         private const string RequestPath = "/api/request";
-        private SampleServer server = new SampleServer();
-        private SampleClient client = new SampleClient();
+        private readonly SampleServer server = new();
+        private readonly SampleClient client = new();
 
         public void Start(ushort port = 19999)
         {
             var url = $"http://localhost:{port.ToString(CultureInfo.InvariantCulture)}{RequestPath}/";
-            this.server.Start(url);
-            this.client.Start(url);
+            server.Start(url);
+            client.Start(url);
         }
 
         public void Dispose()
         {
-            this.client.Dispose();
-            this.server.Dispose();
+            client.Dispose();
+            server.Dispose();
         }
     }
 }

@@ -13,8 +13,8 @@ namespace ConsoleApp6
 
         public void Start(string url)
         {
-            this.listener.Prefixes.Add(url);
-            this.listener.Start();
+            listener.Prefixes.Add(url);
+            listener.Start();
 
             Task.Run(() =>
             {
@@ -27,8 +27,8 @@ namespace ConsoleApp6
                         var context = listener.GetContext();
 
                         using var activity = source.StartActivity(
-                            $"{context.Request.HttpMethod}:{context.Request.Url.AbsolutePath}",
-                            ActivityKind.Server);
+                            $"Server: {context.Request.HttpMethod}:{context.Request.Url?.AbsolutePath}",
+                            ActivityKind.Client);
 
                         var headerKeys = context.Request.Headers.AllKeys;
                         foreach (var headerKey in headerKeys)
@@ -43,7 +43,7 @@ namespace ConsoleApp6
                             context.Request.ContentEncoding))
                         {
                             requestContent = reader.ReadToEnd();
-                            childSpan.AddEvent(new ActivityEvent("StreamReader.ReadToEnd"));
+                            childSpan?.AddEvent(new ActivityEvent("StreamReader.ReadToEnd"));
                         }
 
                         activity?.SetTag("request.content", requestContent);
@@ -65,7 +65,7 @@ namespace ConsoleApp6
 
         public void Dispose()
         {
-            ((IDisposable) this.listener).Dispose();
+            ((IDisposable) listener).Dispose();
         }
     }
 }
